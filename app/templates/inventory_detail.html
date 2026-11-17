@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Zapiska {{ e.entry_number or e.id }} — Inwentarz Gdański{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Okruszki"><a href="{{ url_for('inventory') }}">Inwentarz</a><span aria-hidden="true">›</span><span>Zapiska {{ e.entry_number or e.id }}</span></nav>
+<article class="detail-heading">
+  <p class="eyebrow">Zapiska inwentarza</p>
+  <h1>{% if e.entry_number %}Nr {{ e.entry_number }}{% else %}Zapiska{% endif %}{% if e.iso_date %} <span>· {{ e.iso_date }}</span>{% endif %}</h1>
+  <div class="life-summary">
+    {% if e.year_text %}<span>Rok (z druku)<strong>{{ e.year_text }}</strong></span>{% endif %}
+    {% if e.date_text %}<span>Data (z druku)<strong>{{ e.date_text }}</strong></span>{% endif %}
+    {% if e.place %}<span>Miejsce<strong>{{ e.place_pl or e.place }}{% if e.place_pl and e.place_pl != e.place %} ({{ e.place }}){% endif %}</strong></span>{% endif %}
+    <span>Skan{{ 'y' if pages|length > 1 else '' }}{% for p in pages %}<strong>str. {{ p }}</strong>{% endfor %}</span>
+  </div>
+  <div class="detail-actions">
+    {% for p in pages %}<button type="button" class="button secondary scan-open" data-pages="{{ p }}" data-title="Strona {{ p }}">Skan strony {{ p }}</button>{% endfor %}
+    {% if prev_id %}<a class="button secondary" href="{{ url_for('inventory_entry', entry_id=prev_id) }}">← Poprzednia</a>{% endif %}
+    {% if next_id %}<a class="button secondary" href="{{ url_for('inventory_entry', entry_id=next_id) }}">Następna →</a>{% endif %}
+  </div>
+</article>
+<div class="detail-layout">
+<div class="detail-main">
+  <section class="detail-section">
+    <h2>Tekst polski</h2>
+    <p class="source-text">{{ e.text_pl or '(brak tłumaczenia)' }}</p>
+  </section>
+  <section class="detail-section">
+    <h2>Tekst oryginalny (niemiecki)</h2>
+    <p class="source-text original" lang="de">{{ e.text }}</p>
+  </section>
+  <section class="detail-section">
+    <h2>Występowanie w indeksie <span class="section-count">{{ linked|length }}</span></h2>
+    {% if linked %}
+    <ul class="link-list">
+      {% for item in linked %}<li><a href="{{ url_for('index_detail', entry_id=item.id) }}">{{ item.name }}</a>{% if item.description %} <span class="muted">— {{ item.description }}</span>{% endif %}</li>{% endfor %}
+    </ul>
+    {% else %}<p class="muted">Ta zapiska nie jest przywoływana w indeksie.</p>{% endif %}
+  </section>
+</div>
+<aside class="person-sidebar">
+  <h2>Metadane</h2>
+  <dl class="name-facts">
+    <dt>ID wewnętrzny</dt><dd>{{ e.id }}</dd>
+    <dt>Numer zapiski</dt><dd>{{ e.entry_number or '— (przypis)' }}</dd>
+    <dt>Numeracja zapisek powiązanych</dt><dd>{{ numbers | join(', ') if numbers else '—' }}</dd>
+    <dt>Strony skanu</dt><dd>{{ pages | join(', ') }}</dd>
+  </dl>
+</aside>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}{{ e.name }} — Indeks — Inwentarz Gdański{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Okruszki"><a href="{{ url_for('index_list') }}">Indeks</a><span aria-hidden="true">›</span><span>{{ e.name }}</span></nav>
+<article class="detail-heading">
+  <p class="eyebrow">Hasło indeksu</p>
+  <h1>{{ e.name }}</h1>
+  {% if e.description %}<p class="index-description">{{ e.description }}</p>{% endif %}
+  <div class="life-summary">
+    <span>Strona skanu indeksu<strong>{{ e.chronos_page }}</strong></span>
+    <span>Zapisek<strong>{{ numbers|length }}</strong></span>
+    {% if appendix %}<span>Odsyłacze do aneksu<strong>{{ appendix|join(', ') }}</strong></span>{% endif %}
+    {% if e.see %}<span>Zob.<strong>{{ e.see }}</strong></span>{% endif %}
+  </div>
+  <div class="detail-actions">
+    <button type="button" class="button secondary scan-open" data-pages="{{ e.chronos_page }}" data-title="Indeks, strona {{ e.chronos_page }}">Skan strony indeksu {{ e.chronos_page }}</button>
+    {% if prev_id %}<a class="button secondary" href="{{ url_for('index_detail', entry_id=prev_id) }}">← Poprzednie hasło</a>{% endif %}
+    {% if next_id %}<a class="button secondary" href="{{ url_for('index_detail', entry_id=next_id) }}">Następne hasło →</a>{% endif %}
+  </div>
+</article>
+<div class="detail-layout">
+<div class="detail-main">
+  <section class="detail-section">
+    <h2>Zapiski powiązane <span class="section-count">{{ numbers|length }}</span></h2>
+    {% if numbers %}
+    <div class="number-chips">
+      {% for n in numbers %}
+        {% set targets = linked.get(n, []) %}
+        {% if targets %}
+          {% for t in targets %}<a class="number-chip" href="{{ url_for('inventory_entry', entry_id=t) }}">{{ n }}</a>{% endfor %}
+        {% else %}
+          <span class="number-chip disabled" title="Brak odpowiadającej zapiski w bazie">{{ n }}</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <p class="muted small">Kliknij numer, aby otworzyć zapiskę. Numer z indeksu łączy się z dopiskiem zapiski (np. „9472. 9473” to jedna zapiska pokrywająca oba numery).</p>
+    {% else %}
+    <p class="muted">To hasło nie odwołuje się do konkretnych zapisek{% if e.see %}; odsyła do: <a href="{{ url_for('index_list', q=e.see, mode='phrase') }}">{{ e.see }}</a>{% endif %}.</p>
+    {% endif %}
+  </section>
+  {% if appendix %}
+  <section class="detail-section">
+    <h2>Odsyłacze do aneksu <span class="section-count">{{ appendix|length }}</span></h2>
+    <div class="number-chips">{% for p in appendix %}<span class="number-chip appendix">aneks, str. {{ p }}</span>{% endfor %}</div>
+    <p class="muted small">Numery poprzedzone w indeksie literą „S.” — dotyczą stron aneksu, nie numerów zapisek.</p>
+  </section>
+  {% endif %}
+  {% if e.note %}
+  <section class="detail-section">
+    <h2>Uwagi</h2>
+    <p class="source-text">{{ e.note }}</p>
+  </section>
+  {% endif %}
+  {% if e.raw %}
+  <section class="detail-section">
+    <h2>Zapis z druku</h2>
+    <p class="source-text original" lang="de">{{ e.raw }}</p>
+  </section>
+  {% endif %}
+</div>
+<aside class="person-sidebar">
+  <h2>Metadane</h2>
+  <dl class="name-facts">
+    <dt>ID wewnętrzne</dt><dd>{{ e.id }}</dd>
+    <dt>Strona skanu</dt><dd>{{ e.chronos_page }}</dd>
+    <dt>Liczba numerów zapisek</dt><dd>{{ numbers|length }}</dd>
+    <dt>Odsyłaczy do aneksu</dt><dd>{{ appendix|length }}</dd>
+    {% if e.needs_review %}<dt>Status</dt><dd><span class="status uncertain">do przeglądu</span></dd>{% endif %}
+  </dl>
+</aside>
+</div>
+{% endblock %}

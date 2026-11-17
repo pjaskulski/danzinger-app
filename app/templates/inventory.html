@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Inwentarz — Inwentarz Gdański 1531–1591{% endblock %}
+{% block content %}
+<section class="catalog-heading">
+  <div><p class="eyebrow">Inwentarz</p><h1>Inwentarz<br>Gdański <span>1531–1591</span></h1></div>
+  <div class="catalog-number"><strong>{{ '{:,}'.format(total_all).replace(',', ' ') }}</strong><span>zapisek w inwentarzu</span></div>
+</section>
+<form method="get" action="{{ url_for('inventory') }}" class="catalog-form">
+  <div class="search-bar"><label for="q" class="sr-only">Szukaj w inwentarzu</label><input id="q" name="q" type="search" value="{{ q }}" placeholder="Słowo lub fraza w tekście zapisek (niem./pol.)…" maxlength="300"><button class="button primary" type="submit">Szukaj <span aria-hidden="true">→</span></button></div>
+  <div class="catalog-layout">
+  <aside class="filter-sidebar">
+    <div class="filter-panel">
+      <div class="search-mode">
+        <label for="mode">Sposób wyszukiwania</label><select id="mode" name="mode"><option value="words" {% if mode=='words' %}selected{% endif %}>Wszystkie słowa</option><option value="phrase" {% if mode=='phrase' %}selected{% endif %}>Dokładna fraza</option><option value="fts" {% if mode=='fts' %}selected{% endif %}>Składnia pełnotekstowa</option></select>
+      </div>
+      <div class="filter-title"><h2>Filtry</h2>{% if q or year_from or year_to or place %}<a href="{{ url_for('inventory') }}">Wyczyść</a>{% endif %}</div>
+      <label for="year_from">Rok od</label><input id="year_from" name="year_from" type="number" min="1531" max="1592" value="{{ year_from }}" placeholder="1531">
+      <label for="year_to">Rok do</label><input id="year_to" name="year_to" type="number" min="1531" max="1592" value="{{ year_to }}" placeholder="1592">
+      <label for="place">Miejscowość</label><input id="place" name="place" value="{{ place }}" maxlength="100" placeholder="np. Danzig albo Gdańsk" autocomplete="off">
+      <label for="sort">Porządek</label><select id="sort" name="sort"><option value="chron" {% if sort=='chron' %}selected{% endif %}>Chronologicznie</option><option value="relevance" {% if sort=='relevance' %}selected{% endif %}>Trafność</option></select>
+      <button class="button secondary" type="submit">Zastosuj filtry</button>
+    </div>
+  </aside>
+  <section class="results" aria-label="Lista zapisek">
+    <div class="results-heading"><h2>{% if q or year_from or year_to or place %}Wyniki{% else %}Zapiski{% endif %}</h2><span class="results-count"><strong>{{ '{:,}'.format(total).replace(',', ' ') }}</strong> zapisek</span></div>
+    {% if not rows %}<div class="empty"><h3>Brak pasujących zapisek</h3><p>Spróbuj krótszej frazy albo usuń filtry.</p><a href="{{ url_for('inventory') }}">Pokaż cały inwentarz →</a></div>{% endif %}
+    {% for row in rows %}
+    {% set pages = scan_pages.get(row.id, []) %}
+    <article class="entry-result">
+      <div class="result-top">
+        <h3><a href="{{ url_for('inventory_entry', entry_id=row.id) }}">{% if row.entry_number %}Zapiska nr {{ row.entry_number }}{% else %}Zapiska{% endif %}{% if row.iso_date %} <span class="entry-date">· {{ row.iso_date }}</span>{% endif %}</a></h3>
+      </div>
+      <div class="result-meta">{% if row.place %}<span>{{ row.place_pl or row.place }}{% if row.place_pl and row.place_pl != row.place %} <span class="muted">({{ row.place }})</span>{% endif %}</span>{% endif %}{% if row.is_footnote %}<span class="status">przypis</span>{% endif %}</div>
+      <p class="excerpt">{{ (row.text_pl or row.text or '')[:260] }}{% if (row.text_pl or row.text or '')|length > 260 %}…{% endif %}</p>
+      <div class="result-actions">
+        {% if pages %}<button type="button" class="button small secondary scan-open" data-pages="{{ pages|join(',') }}" data-title="Zapiska {{ row.entry_number or row.id }}{% if row.iso_date %} ({{ row.iso_date }}){% endif %}">Skan: str. {{ pages|join(', ') }}</button>{% endif %}
+        <a class="button small secondary" href="{{ url_for('inventory_entry', entry_id=row.id) }}">Otwórz zapiskę →</a>
+      </div>
+    </article>
+    {% endfor %}
+    {% if pages > 1 %}
+    <nav class="pagination" aria-label="Strony wyników">
+      <div class="pagination-direction">{% if page > 1 %}<a href="{{ page_url(1) }}">« Pierwsza</a><a href="{{ page_url(page-1) }}" rel="prev">← Poprzednia</a>{% else %}<span aria-disabled="true">« Pierwsza</span><span aria-disabled="true">← Poprzednia</span>{% endif %}</div>
+      <div class="pagination-numbers">{% for number in page_numbers %}<a href="{{ page_url(number) }}" {% if number == page %}aria-current="page"{% endif %}>{{ number }}</a>{% endfor %}</div>
+      <div class="pagination-direction">{% if page < pages %}<a href="{{ page_url(page+1) }}" rel="next">Następna →</a><a href="{{ page_url(pages) }}">Ostatnia »</a>{% else %}<span aria-disabled="true">Następna →</span><span aria-disabled="true">Ostatnia »</span>{% endif %}</div>
+    </nav><p class="page-note">Strona {{ page }} z {{ pages }}</p>
+    {% endif %}
+  </section>
+  </div>
+</form>
+{% endblock %}
